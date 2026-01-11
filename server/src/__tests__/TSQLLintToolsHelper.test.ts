@@ -1,8 +1,8 @@
 import * as assert from "assert";
-import * as sinon from "sinon";
 import { EventEmitter } from "events";
 import * as fs from "fs";
 import * as os from "os";
+import * as sinon from "sinon";
 import TSQLLintRuntimeHelper from "../TSQLLintToolsHelper";
 
 // ===== Test Suites =====
@@ -125,9 +125,7 @@ suite("TSQLLintToolsHelper - DownloadRuntime() Error Handling", () => {
     const mockRequest = new EventEmitter() as any;
 
     const httpsStub = sinon.stub(require("follow-redirects").https, "get");
-    httpsStub.callsFake((_url: string, _callback: Function) => {
-      return mockRequest;
-    });
+    httpsStub.callsFake((_url: string, _callback: Function) => mockRequest);
 
     sinon.stub(fs, "existsSync").returns(false);
     sinon.stub(fs, "mkdirSync");

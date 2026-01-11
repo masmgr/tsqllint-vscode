@@ -17,7 +17,7 @@ export function parseErrors(docText: string, errorStrings: string[]): ITsqlLintE
 
     const line = Math.max(positionArr[0] - 1, 0);
     const colStart = lineStarts[line];
-    var colEnd = 0;
+    let colEnd = 0;
     if (lines[line]) {
       colEnd = lines[line].length;
     }

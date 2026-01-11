@@ -1,6 +1,6 @@
 import * as assert from "assert";
-import * as vscode from "vscode";
 import * as path from "path";
+import * as vscode from "vscode";
 
 /**
  * Helper function to wait for diagnostics to be available
@@ -67,7 +67,7 @@ function assertDiagnosticForRule(diagnostics: vscode.Diagnostic[], expectedRule:
     diagnostic,
     `Expected TSQLLint diagnostic for rule '${expectedRule}' but got: ${diagnostics.map((d) => d.message).join(", ")}`
   );
-  return diagnostic!;
+  return diagnostic;
 }
 
 suite("E2E: End-to-End TSQLLint Integration Tests", () => {

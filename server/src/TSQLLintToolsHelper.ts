@@ -101,16 +101,12 @@ export default class TSQLLintRuntimeHelper {
       const download: Promise<string> = TSQLLintRuntimeHelper.DownloadRuntime(tsqllintInstallDirectory);
 
       download
-        .then((path: string) => {
-          return this.UnzipRuntime(path, tsqllintInstallDirectory);
-        })
+        .then((path: string) => this.UnzipRuntime(path, tsqllintInstallDirectory))
         .then((installDir: string) => {
           console.log("Installation of TSQLLint Runtime Complete");
           return resolve(installDir);
         })
-        .catch((error: Error) => {
-          return reject(error);
-        });
+        .catch((error: Error) => reject(error));
     });
   }
 
