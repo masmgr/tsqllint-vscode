@@ -10,7 +10,7 @@ import {
   TextEdit,
   TextDocumentEdit,
   WorkspaceEdit,
-  InitializeParams
+  InitializeParams,
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { ChildProcess } from "child_process";
@@ -35,10 +35,8 @@ interface TsqlLintSettings {
 const defaultSettings: TsqlLintSettings = { autoFixOnSave: false };
 let globalSettings: TsqlLintSettings = defaultSettings;
 
-connection.onDidChangeConfiguration(change => {
-  globalSettings = <TsqlLintSettings>(
-    (change.settings.tsqlLint || defaultSettings)
-  );
+connection.onDidChangeConfiguration((change) => {
+  globalSettings = <TsqlLintSettings>(change.settings.tsqlLint || defaultSettings);
 });
 
 documents.listen(connection);
@@ -51,7 +49,7 @@ connection.onInitialize((params: InitializeParams) => {
         save: true,
         willSaveWaitUntil: true,
         willSave: true,
-        change: TextDocumentSyncKind.Incremental
+        change: TextDocumentSyncKind.Incremental,
       },
       codeActionProvider: true,
     },
@@ -60,7 +58,7 @@ connection.onInitialize((params: InitializeParams) => {
 
 connection.onCodeAction(getCommands);
 
-documents.onDidChangeContent(async change => {
+documents.onDidChangeContent(async (change) => {
   await ValidateBuffer(change.document, null);
 });
 
@@ -68,7 +66,7 @@ connection.onNotification("fix", async (uri: string) => {
   const textDocument = documents.get(uri);
   var edits = await getTextEdit(textDocument, true);
   // The fuckery that I wasted 6 hours on...
-  // IMPORTANT! It's syntactially correct to pass textDocument to TextDocumentEdit.create, but it won't work. 
+  // IMPORTANT! It's syntactially correct to pass textDocument to TextDocumentEdit.create, but it won't work.
   // You'll get a very vauge error like:
   // ResponseError: Request workspace/applyEdit failed with message: Unknown workspace edit change received:
   // Shoutout to finally finding this issues and looking to see how he fixed it.
@@ -80,7 +78,7 @@ connection.onNotification("fix", async (uri: string) => {
   await connection.workspace.applyEdit(workspaceEdit);
 });
 
-documents.onWillSaveWaitUntil(e => getTextEdit(e.document))
+documents.onWillSaveWaitUntil((e) => getTextEdit(e.document));
 
 async function getTextEdit(d: TextDocument, force: boolean = false): Promise<TextEdit[]> {
   if (!force && !globalSettings.autoFixOnSave) {
@@ -89,19 +87,21 @@ async function getTextEdit(d: TextDocument, force: boolean = false): Promise<Tex
 
   var test = await ValidateBuffer(d, true);
 
-  return [{
-    range: {
-      start: {
-        line: 0,
-        character: 0
+  return [
+    {
+      range: {
+        start: {
+          line: 0,
+          character: 0,
+        },
+        end: {
+          line: 10000,
+          character: 0,
+        },
       },
-      end: {
-        line: 10000,
-        character: 0
-      }
+      newText: test,
     },
-    newText: test
-  }];
+  ];
 }
 
 const toolsHelper: TSQLLintRuntimeHelper = new TSQLLintRuntimeHelper(applicationRoot.dir);
@@ -177,8 +177,7 @@ async function ValidateBuffer(textDocument: TextDocument, shouldFix: boolean): P
 
   try {
     lintErrorStrings = await LintBuffer(tempFilePath, shouldFix);
-  }
-  catch (error) {
+  } catch (error) {
     registerFileErrors(textDocument, []);
     throw error;
   }
