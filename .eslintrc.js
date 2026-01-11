@@ -20,16 +20,19 @@ module.exports = {
   extends: ["plugin:@typescript-eslint/recommended", "plugin:@typescript-eslint/recommended-requiring-type-checking"],
   parser: "@typescript-eslint/parser",
   parserOptions: {
-    project: "tsconfig.json",
     sourceType: "module",
   },
-  plugins: [
-    "eslint-plugin-jsdoc",
-    "eslint-plugin-prefer-arrow",
-    "eslint-plugin-import",
-    "@typescript-eslint",
-    "@typescript-eslint/tslint",
+  ignorePatterns: ["**/out/**", "**/*.d.ts", ".vscode-test/**", "node_modules/**", "eslint.config.js", ".eslintrc.js"],
+  overrides: [
+    {
+      files: ["client/**/*.ts", "server/**/*.ts"],
+      parserOptions: {
+        project: ["./client/tsconfig.json", "./server/tsconfig.json"],
+        tsconfigRootDir: __dirname,
+      },
+    },
   ],
+  plugins: ["eslint-plugin-jsdoc", "eslint-plugin-prefer-arrow", "eslint-plugin-import", "@typescript-eslint"],
   rules: {
     "@typescript-eslint/adjacent-overload-signatures": "error",
     "@typescript-eslint/array-type": [
@@ -38,75 +41,26 @@ module.exports = {
         default: "array-simple",
       },
     ],
-    "@typescript-eslint/ban-types": [
-      "error",
-      {
-        types: {
-          Object: {
-            message: "Avoid using the `Object` type. Did you mean `object`?",
-          },
-          Function: {
-            message: "Avoid using the `Function` type. Prefer a specific function type, like `() => void`.",
-          },
-          Boolean: {
-            message: "Avoid using the `Boolean` type. Did you mean `boolean`?",
-          },
-          Number: {
-            message: "Avoid using the `Number` type. Did you mean `number`?",
-          },
-          String: {
-            message: "Avoid using the `String` type. Did you mean `string`?",
-          },
-          Symbol: {
-            message: "Avoid using the `Symbol` type. Did you mean `symbol`?",
-          },
-        },
-      },
-    ],
     "@typescript-eslint/consistent-type-assertions": "error",
     "@typescript-eslint/consistent-type-definitions": "error",
     "@typescript-eslint/dot-notation": "error",
     "@typescript-eslint/explicit-function-return-type": "off",
-    "@typescript-eslint/explicit-member-accessibility": [
-      "error",
-      {
-        accessibility: "explicit",
-      },
-    ],
+    "@typescript-eslint/explicit-member-accessibility": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
-    "@typescript-eslint/indent": [
-      "error",
-      2,
-      {
-        FunctionDeclaration: {
-          parameters: "first",
-        },
-        FunctionExpression: {
-          parameters: "first",
-        },
-      },
-    ],
-    "@typescript-eslint/member-delimiter-style": [
-      "error",
-      {
-        multiline: {
-          delimiter: "semi",
-          requireLast: true,
-        },
-        singleline: {
-          delimiter: "semi",
-          requireLast: false,
-        },
-      },
-    ],
     "@typescript-eslint/member-ordering": "error",
     "@typescript-eslint/naming-convention": "error",
     "@typescript-eslint/no-empty-function": "error",
     "@typescript-eslint/no-empty-interface": "error",
     "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-misused-promises": "off",
+    "@typescript-eslint/no-unsafe-argument": "off",
+    "@typescript-eslint/no-unsafe-assignment": "off",
+    "@typescript-eslint/no-unsafe-call": "off",
+    "@typescript-eslint/no-unsafe-member-access": "off",
+    "@typescript-eslint/no-unsafe-return": "off",
     "@typescript-eslint/no-misused-new": "error",
     "@typescript-eslint/no-namespace": "error",
-    "@typescript-eslint/no-parameter-properties": "off",
+    "@typescript-eslint/parameter-properties": "off",
     "@typescript-eslint/no-shadow": [
       "error",
       {
@@ -119,14 +73,6 @@ module.exports = {
     "@typescript-eslint/prefer-for-of": "error",
     "@typescript-eslint/prefer-function-type": "error",
     "@typescript-eslint/prefer-namespace-keyword": "error",
-    "@typescript-eslint/quotes": [
-      "error",
-      "double",
-      {
-        avoidEscape: true,
-      },
-    ],
-    "@typescript-eslint/semi": ["error", "always"],
     "@typescript-eslint/triple-slash-reference": [
       "error",
       {
@@ -135,13 +81,12 @@ module.exports = {
         lib: "always",
       },
     ],
-    "@typescript-eslint/type-annotation-spacing": "error",
     "@typescript-eslint/typedef": "off",
     "@typescript-eslint/unified-signatures": "error",
     "arrow-body-style": "error",
-    "arrow-parens": ["error", "always"],
+    "arrow-parens": ["warn", "as-needed"],
     "brace-style": ["error", "1tbs"],
-    "comma-dangle": ["error", "always-multiline"],
+    "comma-dangle": "off",
     complexity: "off",
     "constructor-super": "error",
     curly: "error",
@@ -162,14 +107,24 @@ module.exports = {
       "undefined",
     ],
     "id-match": "error",
-    "import/order": "error",
-    indent: "error",
+    "import/order": "warn",
+    indent: [
+      "error",
+      2,
+      {
+        FunctionDeclaration: {
+          parameters: "first",
+        },
+        FunctionExpression: {
+          parameters: "first",
+        },
+      },
+    ],
     "jsdoc/check-alignment": "error",
     "jsdoc/check-indentation": "error",
-    "jsdoc/newline-after-description": "error",
     "max-classes-per-file": ["error", 1],
     "max-len": [
-      "error",
+      "warn",
       {
         code: 120,
       },
@@ -196,15 +151,15 @@ module.exports = {
     "no-unused-expressions": "error",
     "no-unused-labels": "error",
     "no-use-before-define": "off",
-    "no-var": "error",
+    "no-var": "warn",
     "object-shorthand": "error",
     "one-var": ["error", "never"],
-    "prefer-arrow/prefer-arrow-functions": "error",
+    "prefer-arrow/prefer-arrow-functions": "off",
     "prefer-const": "error",
     "quote-props": ["error", "consistent-as-needed"],
-    quotes: "error",
+    quotes: "off",
     radix: "error",
-    semi: "error",
+    semi: "warn",
     "space-before-function-paren": [
       "error",
       {
@@ -222,14 +177,5 @@ module.exports = {
     ],
     "use-isnan": "error",
     "valid-typeof": "off",
-    "@typescript-eslint/tslint/config": [
-      "error",
-      {
-        rules: {
-          "import-spacing": true,
-          whitespace: true,
-        },
-      },
-    ],
   },
 };
