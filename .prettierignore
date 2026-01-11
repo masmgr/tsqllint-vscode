@@ -1,0 +1,16 @@
+node_modules
+client/node_modules
+server/node_modules
+client/out
+server/out
+.vscode
+.vscode-test
+*.vsix
+*.tgz
+tsqllint
+tsqllint-*
+*.json
+*.md
+package-lock.json
+client\package-lock.json
+server\package-lock.json

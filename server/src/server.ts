@@ -1,5 +1,12 @@
 "use strict";
 
+import { ChildProcess } from "child_process";
+
+import { spawn } from "child_process";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
+import { TextDocument } from "vscode-languageserver-textdocument";
 import {
   createConnection,
   Diagnostic,
@@ -10,19 +17,12 @@ import {
   TextEdit,
   TextDocumentEdit,
   WorkspaceEdit,
-  InitializeParams
+  InitializeParams,
 } from "vscode-languageserver/node";
-import { TextDocument } from "vscode-languageserver-textdocument";
-import { ChildProcess } from "child_process";
-import { getCommands, registerFileErrors } from "./commands";
-import { ITsqlLintError, parseErrors } from "./parseError";
-import TSQLLintRuntimeHelper from "./TSQLLintToolsHelper";
-
-import { spawn } from "child_process";
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
 import * as uid from "uid-safe";
+import TSQLLintRuntimeHelper from "./TSQLLintToolsHelper";
+import { ITsqlLintError, parseErrors } from "./parseError";
+import { getCommands, registerFileErrors } from "./commands";
 
 const applicationRoot = path.parse(process.argv[1]);
 
@@ -35,73 +35,71 @@ interface TsqlLintSettings {
 const defaultSettings: TsqlLintSettings = { autoFixOnSave: false };
 let globalSettings: TsqlLintSettings = defaultSettings;
 
-connection.onDidChangeConfiguration(change => {
-  globalSettings = <TsqlLintSettings>(
-    (change.settings.tsqlLint || defaultSettings)
-  );
+connection.onDidChangeConfiguration((change) => {
+  globalSettings = (change.settings.tsqlLint || defaultSettings) as TsqlLintSettings;
 });
 
 documents.listen(connection);
 
-connection.onInitialize((params: InitializeParams) => {
-  return {
-    capabilities: {
-      textDocumentSync: {
-        openClose: true,
-        save: true,
-        willSaveWaitUntil: true,
-        willSave: true,
-        change: TextDocumentSyncKind.Incremental
-      },
-      codeActionProvider: true,
+connection.onInitialize((params: InitializeParams) => ({
+  capabilities: {
+    textDocumentSync: {
+      openClose: true,
+      save: true,
+      willSaveWaitUntil: true,
+      willSave: true,
+      change: TextDocumentSyncKind.Incremental,
     },
-  };
-});
+    codeActionProvider: true,
+  },
+}));
 
 connection.onCodeAction(getCommands);
 
-documents.onDidChangeContent(async change => {
+documents.onDidChangeContent(async (change) => {
   await ValidateBuffer(change.document, null);
 });
 
 connection.onNotification("fix", async (uri: string) => {
   const textDocument = documents.get(uri);
-  var edits = await getTextEdit(textDocument, true);
+  const edits = await getTextEdit(textDocument, true);
   // The fuckery that I wasted 6 hours on...
-  // IMPORTANT! It's syntactially correct to pass textDocument to TextDocumentEdit.create, but it won't work. 
+  // IMPORTANT! It's syntactially correct to pass textDocument to TextDocumentEdit.create, but it won't work.
   // You'll get a very vauge error like:
   // ResponseError: Request workspace/applyEdit failed with message: Unknown workspace edit change received:
   // Shoutout to finally finding this issues and looking to see how he fixed it.
   // https://github.com/stylelint/vscode-stylelint/issues/329
   // https://github.com/stylelint/vscode-stylelint/compare/v1.2.0..v1.2.1
   const identifier = { uri: textDocument.uri, version: textDocument.version };
-  var textDocumentEdits = TextDocumentEdit.create(identifier, edits);
-  var workspaceEdit: WorkspaceEdit = { documentChanges: [textDocumentEdits] };
+  const textDocumentEdits = TextDocumentEdit.create(identifier, edits);
+  const workspaceEdit: WorkspaceEdit = { documentChanges: [textDocumentEdits] };
   await connection.workspace.applyEdit(workspaceEdit);
 });
 
-documents.onWillSaveWaitUntil(e => getTextEdit(e.document))
+documents.onWillSaveWaitUntil((e) => getTextEdit(e.document));
 
 async function getTextEdit(d: TextDocument, force: boolean = false): Promise<TextEdit[]> {
   if (!force && !globalSettings.autoFixOnSave) {
     return [];
   }
 
-  var test = await ValidateBuffer(d, true);
+  const test = await ValidateBuffer(d, true);
 
-  return [{
-    range: {
-      start: {
-        line: 0,
-        character: 0
+  return [
+    {
+      range: {
+        start: {
+          line: 0,
+          character: 0,
+        },
+        end: {
+          line: 10000,
+          character: 0,
+        },
       },
-      end: {
-        line: 10000,
-        character: 0
-      }
+      newText: test,
     },
-    newText: test
-  }];
+  ];
 }
 
 const toolsHelper: TSQLLintRuntimeHelper = new TSQLLintRuntimeHelper(applicationRoot.dir);
@@ -109,10 +107,10 @@ const toolsHelper: TSQLLintRuntimeHelper = new TSQLLintRuntimeHelper(application
 async function LintBuffer(fileUri: string, shouldFix: boolean): Promise<string[]> {
   const toolsPath = await toolsHelper.TSQLLintRuntime();
 
-  let result: string[] = await new Promise((resolve, reject) => {
+  const result: string[] = await new Promise((resolve, reject) => {
     let childProcess: ChildProcess;
 
-    let args = [fileUri];
+    const args = [fileUri];
     if (shouldFix) {
       args.push("-x");
     }
@@ -126,7 +124,7 @@ async function LintBuffer(fileUri: string, shouldFix: boolean): Promise<string[]
         if (process.arch === "ia32") {
           childProcess = spawn(`${toolsPath}/win-x86/TSQLLint.Console.exe`, args);
         } else if (process.arch === "x64") {
-          //childProcess = spawn("D:\\dev\\git\\tsqllint\\source\\TSQLLint\\bin\\Debug\\netcoreapp5.0\\TSQLLint.exe", args);
+          // childProcess = spawn("D:\\dev\\git\\tsqllint\\source\\TSQLLint\\bin\\Debug\\netcoreapp5.0\\TSQLLint.exe", args);
           childProcess = spawn(`${toolsPath}/win-x64/TSQLLint.Console.exe`, args);
         } else {
           throw new Error(`Invalid Platform: ${os.type()}, ${process.arch}`);
@@ -147,7 +145,7 @@ async function LintBuffer(fileUri: string, shouldFix: boolean): Promise<string[]
 
     childProcess.on("close", () => {
       const list: string[] = result.split("\n");
-      const resultsArr: string[] = new Array();
+      const resultsArr: string[] = [];
 
       list.forEach((element) => {
         const index = element.indexOf("(");
@@ -177,8 +175,7 @@ async function ValidateBuffer(textDocument: TextDocument, shouldFix: boolean): P
 
   try {
     lintErrorStrings = await LintBuffer(tempFilePath, shouldFix);
-  }
-  catch (error) {
+  } catch (error) {
     registerFileErrors(textDocument, []);
     throw error;
   }
