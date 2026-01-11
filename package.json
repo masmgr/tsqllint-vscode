@@ -65,6 +65,7 @@
         "@typescript-eslint/parser": "^5.21.0",
         "conventional-changelog": "^2.0.1",
         "eslint": "^8.14.0",
+        "prettier": "^3.7.4",
         "release-it": "^15.6.0",
         "standard": "^11.0.1",
         "typescript": "^4.6.3",
@@ -72,6 +73,7 @@
     },
     "scripts": {
         "lint": "eslint -c .eslintrc.js --ext .ts",
+        "format": "prettier --ignore-path .prettierignore --write \"**/*.{ts,js,tsx,jsx,md,css,scss,html}\"",
         "build-changelog": "conventional-changelog -i CHANGELOG.md -u -s -r 0 && git add CHANGELOG.md",
         "vscode:prepublish": "cd client && npm run update-vscode && cd .. && npm run compile",
         "compile:client": "tsc -p ./client/tsconfig.json",
