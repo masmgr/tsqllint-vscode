@@ -1,10 +1,6 @@
 module.exports = {
-  spec: [
-    "out/__tests__/parseError.test.js",
-    "out/__tests__/commands.test.js",
-    "out/__tests__/smoke.test.js",
-    "out/__tests__/TSQLLintToolsHelper.test.js",
-  ],
+  require: ["ts-node/register"],
+  spec: ["src/__tests__/**/*.test.ts"],
   ui: "tdd",
   timeout: 10000,
   color: true,

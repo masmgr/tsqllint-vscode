@@ -74,6 +74,7 @@
         "release-it": "^15.6.0",
         "sinon": "^19.0.2",
         "standard": "^11.0.1",
+        "ts-node": "^10.9.2",
         "typescript": "^4.6.3",
         "vsce": "^1.42.0"
     },
@@ -88,8 +89,8 @@
         "watch:server": "tsc -w -p ./server/tsconfig.json",
         "compile:e2e-fixtures": "node scripts/copy-e2e-fixtures.js",
         "compile": "npm run compile:client && npm run compile:server && npm run compile:e2e-fixtures",
-        "test:unit": "npm run compile:server && cd server && mocha",
-        "test:unit:watch": "npm run compile:server && cd server && mocha --watch",
+        "test:unit": "cd server && mocha",
+        "test:unit:watch": "cd server && mocha --watch",
         "test:integration": "npm run compile && vscode-test --label integration",
         "test:e2e": "npm run compile && vscode-test --label e2e",
         "test:e2e:verbose": "npm run compile && vscode-test --label e2e -- --grep '.*'",

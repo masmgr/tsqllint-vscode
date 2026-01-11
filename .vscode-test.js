@@ -1,9 +1,16 @@
+const path = require("path");
 const { defineConfig } = require("@vscode/test-cli");
+
+const extensionDevelopmentPath = __dirname;
+const workspaceFolder = __dirname;
+const clientOutTest = "client/out/test";
 
 module.exports = defineConfig([
   {
     label: "integration",
-    files: "client/out/test/suite/**/*.test.js",
+    files: `${clientOutTest}/suite/extension.test.js`,
+    extensionDevelopmentPath,
+    workspaceFolder,
     version: "stable",
     launchArgs: ["--disable-extensions", "--disable-workspace-trust"],
     mocha: {
@@ -14,7 +21,9 @@ module.exports = defineConfig([
   },
   {
     label: "e2e",
-    files: "client/out/test/e2e/**/*.test.js",
+    files: `${clientOutTest}/e2e/suite/e2e.test.js`,
+    extensionDevelopmentPath,
+    workspaceFolder,
     version: "stable",
     launchArgs: ["--disable-extensions", "--disable-workspace-trust"],
     mocha: {
