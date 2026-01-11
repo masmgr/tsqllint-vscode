@@ -86,6 +86,9 @@
         "watch:server": "tsc -w -p ./server/tsconfig.json",
         "compile": "npm run compile:client && npm run compile:server",
         "test:smoke": "npm run compile && vscode-test",
+        "test:server": "npm run compile:server && cd server && mocha",
+        "test:server:watch": "npm run compile:server && cd server && mocha --watch",
+        "test:all": "npm run test:server && npm run test:smoke",
         "test": "npm run test:smoke",
         "postinstall": "cd client && npm install && cd ../server && npm install && cd .."
     },
