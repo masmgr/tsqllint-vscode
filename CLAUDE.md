@@ -121,3 +121,98 @@ When fix is requested (manual or on save):
 - Semicolons required
 - Prefer arrow functions
 - Max line length: 120 characters
+
+## Testing
+
+### Test Categories
+
+#### Unit Tests (`npm run test:unit`)
+- **Location:** `server/src/__tests__/*.test.ts`
+- **Framework:** Mocha (TDD interface)
+- **Characteristics:**
+  - Fast, isolated tests with mocking (Sinon)
+  - No external dependencies or binary downloads
+  - Runs in < 10 seconds
+  - No VS Code environment required
+- **Test Files:**
+  - `parseError.test.ts` - Error parsing logic (T-SQL output format parsing)
+  - `commands.test.ts` - Code action generation (disable rules, edit formatting)
+  - `TSQLLintToolsHelper.test.ts` - Platform detection and download logic (all network calls mocked)
+  - `smoke.test.ts` - Basic sanity checks
+
+#### Integration Tests (`npm run test:integration`)
+- **Location:** `client/src/test/suite/*.test.ts`
+- **Framework:** Mocha with VS Code Test API
+- **Characteristics:**
+  - Tests VS Code extension infrastructure
+  - Requires VS Code test environment (vscode-test)
+  - No TSQLLint binary required
+  - Uses xvfb on Linux/CI environments
+- **Test Files:**
+  - `extension.test.ts` - Extension activation, command registration, configuration handling
+
+#### CI Tests (`npm run test:ci`)
+- Runs both unit and integration tests
+- All tests complete in < 30 seconds
+- No binary downloads required
+- Runs in CI/CD pipeline (GitHub Actions)
+
+### Running Tests
+
+```bash
+# Run all CI tests (unit + integration)
+npm test
+npm run test:ci
+
+# Run only unit tests (fast, no VS Code)
+npm run test:unit
+npm run test:unit:watch       # Watch mode for development
+
+# Run only integration tests (VS Code environment)
+npm run test:integration
+
+# Legacy aliases (backwards compatible)
+npm run test:server           # Alias for test:unit
+npm run test:server:watch     # Alias for test:unit:watch
+npm run test:smoke            # Alias for test:integration
+npm run test:all              # Alias for test:ci
+```
+
+### Test Configuration
+
+**Server Tests** ([server/.mocharc.js](server/.mocharc.js))
+- Uses Mocha with TDD interface (suite/test)
+- Timeout: 10 seconds
+- Reporter: spec (verbose output)
+- Test discovery: `out/__tests__/*.test.js` (compiled from TypeScript)
+
+**Client Tests** ([.vscode-test.js](.vscode-test.js))
+- Uses VS Code Test CLI with Mocha
+- Timeout: 20 seconds
+- Launches VS Code with disabled extensions
+- Test discovery: `client/out/test/**/*.test.js` (compiled from TypeScript)
+
+### Test Dependencies
+
+- **Mocha:** Test framework (10.8.2)
+- **Sinon:** Mocking and stubbing (19.0.2)
+- **VS Code Test CLI:** Client test runner (0.0.10)
+- **VS Code Test Electron:** VS Code test environment (2.4.1)
+
+### Adding New Tests
+
+1. **Unit Tests:** Create `.test.ts` file in `server/src/__tests__/` directory
+   - Use Mocha TDD interface (`suite()`, `test()`, `setup()`, `teardown()`)
+   - Use Sinon for mocking external dependencies
+   - Keep tests fast and isolated
+
+2. **Integration Tests:** Create `.test.ts` file in `client/src/test/suite/` directory
+   - Use VS Code API for testing extension behavior
+   - Use Mocha TDD interface
+   - Keep timeout reasonable (20-30 seconds max per test)
+
+### Notes on Test Design
+
+- **No TSQLLint binary downloads in CI:** All download/network operations are mocked using Sinon
+- **No platform-specific CI tests:** Server tests mock platform detection to be OS-independent
+- **Full coverage without external dependencies:** Tests focus on logic and integration patterns, not on external tool functionality
