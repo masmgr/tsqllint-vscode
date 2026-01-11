@@ -88,6 +88,66 @@ To disable specific rule warnings for the entire script place a comment similar 
 SELECT * FROM FOO;
 ```
 
+## Testing
+
+This project includes three types of tests:
+
+### Unit Tests
+```bash
+npm run test:unit
+```
+- Fast tests for individual components (error parsing, code actions, etc.)
+- Uses mocking to avoid external dependencies
+- Runs in < 10 seconds
+
+### Integration Tests
+```bash
+npm run test:integration
+```
+- Tests VS Code extension infrastructure
+- Verifies extension activation, command registration, and configuration
+- Runs in < 30 seconds
+- Does not require TSQLLint binary
+
+### E2E Tests
+```bash
+npm run test:e2e
+```
+- End-to-end tests with actual TSQLLint binary download
+- Tests complete linting workflow including binary initialization
+- First run: ~2 minutes (includes binary download)
+- Subsequent runs: ~30 seconds (uses cached binary)
+- **Local execution only** (not included in CI)
+
+#### E2E Test Categories
+- Binary download and initialization
+- Basic linting flow validation
+- Error detection (select-star, semicolon-termination, keyword-capitalization)
+- Multiple error detection
+- Document change handling
+- Code actions (disable rules)
+- Inline disable comments
+
+#### Running E2E Tests
+```bash
+# Standard execution
+npm run test:e2e
+
+# Verbose output
+npm run test:e2e:verbose
+
+# Clean cache and re-download binary
+TSQLLINT_CLEAN_CACHE=true npm run test:e2e
+```
+
+### CI Pipeline
+```bash
+npm run test:ci
+```
+- Runs unit and integration tests only
+- Completes in < 60 seconds
+- No external binary downloads required
+
 ## Plugins
 
 You can extend the base functionality of TSQLLint by creating a custom plugin. TSQLLint plugins are .Net assemblies that implement the IPlugin interface from TSQLLint.Common.

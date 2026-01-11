@@ -211,8 +211,60 @@ npm run test:all              # Alias for test:ci
    - Use Mocha TDD interface
    - Keep timeout reasonable (20-30 seconds max per test)
 
+3. **E2E Tests:** Create `.test.ts` file in `client/src/test/e2e/suite/` directory
+   - Use VS Code Test API (like integration tests)
+   - Use Mocha TDD interface
+   - Allows actual TSQLLint binary download and execution
+   - First run includes binary download (~2 minutes)
+   - Subsequent runs use cached binary (~30 seconds)
+   - Local execution only, not included in CI
+
+### E2E Tests Details
+
+**Location:** `client/src/test/e2e/suite/e2e.test.ts`
+
+**Characteristics:**
+- Downloads actual TSQLLint v1.11.0 binary on first run
+- Tests complete validation flow end-to-end
+- Uses SQL fixture files with known linting errors
+- Tests are run locally only (development/pre-release verification)
+- First run: ~2 minutes (includes binary download from GitHub)
+- Subsequent runs: ~30 seconds (binary cached in `server/out/tsqllint/`)
+
+**Test Fixtures:** `client/src/test/e2e/fixtures/*.sql`
+- `valid.sql` - Clean SQL with no errors
+- `select-star.sql` - SELECT * rule violation
+- `semi-colon.sql` - Missing semicolon
+- `keyword-capitalization.sql` - Lowercase keywords
+- `multiple-errors.sql` - Multiple rule violations
+- `with-disable-comment.sql` - Inline disable comments
+
+**Test Coverage:**
+- Binary download and caching mechanisms
+- Extension activation on SQL file opening
+- Basic linting flow and validation
+- Error detection for common TSQLLint rules
+- Diagnostic generation and display
+- Document change handling and re-validation
+- Code actions (disable rules)
+- Inline disable comments
+
+**Running E2E Tests:**
+```bash
+npm run test:e2e         # Standard execution
+npm run test:e2e:verbose # Verbose output with all test names
+```
+
+**Helper Functions:**
+- `waitForDiagnostics()` - Wait for diagnostics with timeout
+- `waitForNoDiagnostics()` - Wait for diagnostics to clear
+- `getFixtureUri()` - Get URI for fixture SQL file
+- `openFixture()` - Open fixture file and wait for validation
+- `assertDiagnosticForRule()` - Assert diagnostic exists for specific rule
+
 ### Notes on Test Design
 
 - **No TSQLLint binary downloads in CI:** All download/network operations are mocked using Sinon
 - **No platform-specific CI tests:** Server tests mock platform detection to be OS-independent
 - **Full coverage without external dependencies:** Tests focus on logic and integration patterns, not on external tool functionality
+- **E2E tests are local-only:** E2E tests require actual binary download and are not run in CI pipeline to maintain fast feedback loops
