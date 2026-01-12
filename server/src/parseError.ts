@@ -25,7 +25,7 @@ export function parseErrors(docText: string, errorStrings: string[]): ITsqlLintE
 
       const rawLine = positionArr[0];
       const line = Number.isFinite(rawLine) ? Math.max(rawLine - 1, 0) : -1;
-      const colStart = line >= 0 ? lineStarts[line] ?? 0 : 0;
+      const colStart = line >= 0 ? (lineStarts[line] ?? 0) : 0;
 
       let colEnd = 0;
       if (line >= 0 && lines[line] !== undefined) {

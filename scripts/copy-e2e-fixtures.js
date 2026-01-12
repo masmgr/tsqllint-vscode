@@ -11,7 +11,7 @@ if (!fs.existsSync(outDir)) {
 
 // Copy all files from src to out
 try {
-  fs.readdirSync(srcDir).forEach((file) => {
+  fs.readdirSync(srcDir).forEach(file => {
     const srcFile = path.join(srcDir, file);
     const outFile = path.join(outDir, file);
     fs.copyFileSync(srcFile, outFile);

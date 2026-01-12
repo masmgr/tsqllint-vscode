@@ -71,7 +71,7 @@ function assertDiagnosticForRule(diagnostics: vscode.Diagnostic[], expectedRule:
 }
 
 suite("E2E: End-to-End TSQLLint Integration Tests", () => {
-  suiteSetup(async function() {
+  suiteSetup(async function () {
     this.timeout(120000); // 2 minutes for initial binary download
 
     // Create a temporary SQL document to trigger extension activation
@@ -94,7 +94,7 @@ suite("E2E: End-to-End TSQLLint Integration Tests", () => {
     await new Promise(resolve => setTimeout(resolve, 5000));
   });
 
-  setup(async function() {
+  setup(async function () {
     this.timeout(30000); // 30 seconds per test
   });
 
@@ -108,7 +108,7 @@ suite("E2E: End-to-End TSQLLint Integration Tests", () => {
   // ========== Category 1: Basic Linting Flow ==========
 
   suite("Basic Linting Flow", () => {
-    test("should activate extension on opening SQL file", async function() {
+    test("should activate extension on opening SQL file", async function () {
       this.timeout(30000);
 
       const doc = await vscode.workspace.openTextDocument({
@@ -122,7 +122,7 @@ suite("E2E: End-to-End TSQLLint Integration Tests", () => {
       assert.strictEqual(extension.isActive, true, "Extension should be active");
     });
 
-    test("should get diagnostics from TSQLLint for valid.sql fixture", async function() {
+    test("should get diagnostics from TSQLLint for valid.sql fixture", async function () {
       this.timeout(30000);
 
       const editor = await openFixture("valid.sql");
@@ -141,7 +141,7 @@ suite("E2E: End-to-End TSQLLint Integration Tests", () => {
   // ========== Category 2: Error Detection and Diagnostics ==========
 
   suite("Error Detection and Diagnostics", () => {
-    test("should detect select-star violations", async function() {
+    test("should detect select-star violations", async function () {
       this.timeout(30000);
 
       const editor = await openFixture("select-star.sql");
@@ -153,7 +153,7 @@ suite("E2E: End-to-End TSQLLint Integration Tests", () => {
       assert.ok(diagnostic.source?.includes("TSQLLint"), "Diagnostic source should be TSQLLint");
     });
 
-    test("should detect semicolon-termination violations", async function() {
+    test("should detect semicolon-termination violations", async function () {
       this.timeout(30000);
 
       const editor = await openFixture("semi-colon.sql");
@@ -175,7 +175,7 @@ suite("E2E: End-to-End TSQLLint Integration Tests", () => {
       );
     });
 
-    test("should detect keyword-capitalization violations", async function() {
+    test("should detect keyword-capitalization violations", async function () {
       this.timeout(30000);
 
       const editor = await openFixture("keyword-capitalization.sql");
@@ -197,7 +197,7 @@ suite("E2E: End-to-End TSQLLint Integration Tests", () => {
       );
     });
 
-    test("should detect multiple violations in single file", async function() {
+    test("should detect multiple violations in single file", async function () {
       this.timeout(30000);
 
       const editor = await openFixture("multiple-errors.sql");
@@ -209,7 +209,7 @@ suite("E2E: End-to-End TSQLLint Integration Tests", () => {
       );
     });
 
-    test("should update diagnostics on document change", async function() {
+    test("should update diagnostics on document change", async function () {
       this.timeout(50000);
 
       // Use a fixture with known errors to make testing more reliable
@@ -240,7 +240,7 @@ suite("E2E: End-to-End TSQLLint Integration Tests", () => {
       assert.ok(diagnostics.length > 0, "Modified SQL should produce diagnostics");
     });
 
-    test("should reduce diagnostics when error is fixed", async function() {
+    test("should reduce diagnostics when error is fixed", async function () {
       this.timeout(30000);
 
       const editor = await openFixture("semi-colon.sql");
@@ -278,7 +278,7 @@ suite("E2E: End-to-End TSQLLint Integration Tests", () => {
   // ========== Category 3: Code Actions ==========
 
   suite("Code Actions", () => {
-    test("should provide code actions for diagnostics", async function() {
+    test("should provide code actions for diagnostics", async function () {
       this.timeout(30000);
 
       const editor = await openFixture("select-star.sql");
@@ -302,7 +302,7 @@ suite("E2E: End-to-End TSQLLint Integration Tests", () => {
       assert.ok(disableActions.length > 0, "Should have disable code actions");
     });
 
-    test("should apply disable-for-line code action", async function() {
+    test("should apply disable-for-line code action", async function () {
       this.timeout(30000);
 
       const editor = await openFixture("select-star.sql");
@@ -338,7 +338,7 @@ suite("E2E: End-to-End TSQLLint Integration Tests", () => {
       }
     });
 
-    test("should respect inline disable comments", async function() {
+    test("should respect inline disable comments", async function () {
       this.timeout(30000);
 
       const editor = await openFixture("with-disable-comment.sql");
@@ -359,7 +359,7 @@ suite("E2E: End-to-End TSQLLint Integration Tests", () => {
   // ========== Category 4: Binary Caching ==========
 
   suite("Binary Download and Caching", () => {
-    test("should use TSQLLint binary on validation", async function() {
+    test("should use TSQLLint binary on validation", async function () {
       this.timeout(30000);
 
       const editor = await openFixture("select-star.sql");
@@ -375,7 +375,7 @@ suite("E2E: End-to-End TSQLLint Integration Tests", () => {
       assert.ok(firstDiag.source?.includes("TSQLLint"), "Diagnostics should be from TSQLLint source");
     });
 
-    test("should complete validation quickly on subsequent runs", async function() {
+    test("should complete validation quickly on subsequent runs", async function () {
       this.timeout(15000); // Should be faster than binary download
 
       const editor = await openFixture("select-star.sql");
