@@ -105,12 +105,13 @@ This extension follows the Language Server Protocol pattern with abstraction lay
 
 **Validation Flow** ([server/src/server.ts](server/src/server.ts))
 1. Document change triggers validation via `DocumentManager`
-2. Creates temporary file using `FileSystemAdapter`
-3. Spawns TSQLLint.Console via `BinaryExecutor` with platform detection by `PlatformAdapter`
-4. Parses stdout for error messages (`parseErrors()` from [server/src/parseError.ts](server/src/parseError.ts))
-5. Converts errors to diagnostics via `DiagnosticConverter`
-6. Sends diagnostics to client via `LSPConnectionAdapter`
-7. Cleans up temporary file via `FileSystemAdapter`
+2. Creates temporary file using `FileSystemAdapter` and writes current document text
+3. Resolves TSQLLint runtime location via `TSQLLintToolsHelper`
+4. Spawns TSQLLint.Console via `BinaryExecutor` with platform detection by `PlatformAdapter` (30s timeout, `-x` when fixing)
+5. Parses stdout for error messages (`parseErrors()` from [server/src/parseError.ts](server/src/parseError.ts))
+6. Registers errors for code actions via `registerFileErrors()` and converts to diagnostics via `DiagnosticConverter`
+7. Sends diagnostics to client via `LSPConnectionAdapter`
+8. Reads updated file content (when fixing) and deletes temporary file via `FileSystemAdapter`
 
 **Commands** ([server/src/commands.ts](server/src/commands.ts))
 - Generates code actions for each diagnostic

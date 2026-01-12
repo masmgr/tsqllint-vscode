@@ -10,7 +10,7 @@ This extension may be installed from within VS Code or the [VS Code Marketplace]
 
 ## Usage
 
-After installation, this extension will activate when any .sql file is opened within VS Code. Potetial problems will be underlined in red and details will be available by hovering over the underline.
+After installation, this extension will activate when any .sql file is opened within VS Code. Potential problems will be underlined in red and details will be available by hovering over the underline.
 
 ![Usage Example](images/usage-animation.gif?raw=true)
 
