@@ -1,7 +1,7 @@
 "use strict";
 
 import * as fs from "fs";
-import * as os from "os";
+import { NodePlatformAdapter } from "./platform/PlatformAdapter";
 // tslint:disable-next-line:no-var-requires
 const https = require("follow-redirects").https;
 // tslint:disable-next-line:no-var-requires
@@ -10,6 +10,7 @@ const decompress = require("decompress");
 const decompressTargz = require("decompress-targz");
 
 export default class TSQLLintRuntimeHelper {
+  private platformAdapter: NodePlatformAdapter = new NodePlatformAdapter();
   public static DownloadRuntime(installDirectory: string): Promise<string> {
     const urlBase: string = `https://github.com/tsqllint/tsqllint/releases/download/${this._tsqllintVersion}`;
     const downloadUrl: string = `${urlBase}/${TSQLLintRuntimeHelper._runTime}.tgz`;
@@ -70,20 +71,7 @@ export default class TSQLLintRuntimeHelper {
 
   constructor(applicationRootDirectory: string) {
     TSQLLintRuntimeHelper._applicationRootDirectory = applicationRootDirectory;
-
-    if (os.type() === "Darwin") {
-      TSQLLintRuntimeHelper._runTime = "osx-x64";
-    } else if (os.type() === "Linux") {
-      TSQLLintRuntimeHelper._runTime = "linux-x64";
-    } else if (os.type() === "Windows_NT") {
-      if (process.arch === "ia32") {
-        TSQLLintRuntimeHelper._runTime = "win-x86";
-      } else if (process.arch === "x64") {
-        TSQLLintRuntimeHelper._runTime = "win-x64";
-      }
-    } else {
-      throw new Error(`Invalid Platform: ${os.type()}`);
-    }
+    TSQLLintRuntimeHelper._runTime = this.platformAdapter.getPlatform();
   }
 
   public async TSQLLintRuntime(): Promise<string> {

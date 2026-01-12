@@ -77,7 +77,7 @@ suite("TSQLLintToolsHelper - Constructor & Platform Detection", () => {
     try {
       assert.throws(() => {
         new TSQLLintRuntimeHelper("/test");
-      }, /Invalid Platform/);
+      }, /Unsupported platform/);
     } finally {
       osStub.restore();
     }

@@ -1,7 +1,5 @@
 "use strict";
 
-import { ChildProcess } from "child_process";
-
 import { spawn } from "child_process";
 import * as os from "os";
 import * as path from "path";
@@ -22,6 +20,7 @@ import TSQLLintRuntimeHelper from "./TSQLLintToolsHelper";
 import { ITsqlLintError, parseErrors } from "./parseError";
 import { getCommands, registerFileErrors } from "./commands";
 import { NodeFileSystemAdapter } from "./platform/FileSystemAdapter";
+import { NodePlatformAdapter } from "./platform/PlatformAdapter";
 
 const applicationRoot = path.parse(process.argv[1]);
 
@@ -103,35 +102,19 @@ async function getTextEdit(d: TextDocument, force: boolean = false): Promise<Tex
 
 const toolsHelper: TSQLLintRuntimeHelper = new TSQLLintRuntimeHelper(applicationRoot.dir);
 const fileSystemAdapter = new NodeFileSystemAdapter();
+const platformAdapter = new NodePlatformAdapter();
 
 async function LintBuffer(fileUri: string, shouldFix: boolean): Promise<string[]> {
   const toolsPath = await toolsHelper.TSQLLintRuntime();
 
   const result: string[] = await new Promise((resolve, reject) => {
-    let childProcess: ChildProcess;
-
     const args = [fileUri];
     if (shouldFix) {
       args.push("-x");
     }
 
-    if (os.type() === "Darwin") {
-      childProcess = spawn(`${toolsPath}/osx-x64/TSQLLint.Console`, args);
-    } else if (os.type() === "Linux") {
-      childProcess = spawn(`${toolsPath}/linux-x64/TSQLLint.Console`, args);
-    } else if (os.type() === "Windows_NT") {
-      if (os.type() === "Windows_NT") {
-        if (process.arch === "ia32") {
-          childProcess = spawn(`${toolsPath}/win-x86/TSQLLint.Console.exe`, args);
-        } else if (process.arch === "x64") {
-          childProcess = spawn(`${toolsPath}/win-x64/TSQLLint.Console.exe`, args);
-        } else {
-          throw new Error(`Invalid Platform: ${os.type()}, ${process.arch}`);
-        }
-      }
-    } else {
-      throw new Error(`Invalid Platform: ${os.type()}, ${process.arch}`);
-    }
+    const binaryPath = platformAdapter.getBinaryPath(toolsPath);
+    const childProcess = spawn(binaryPath, args);
 
     let result = "";
     childProcess.stdout.on("data", (data: string) => {
