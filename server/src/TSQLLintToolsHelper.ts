@@ -3,11 +3,8 @@
 import { IncomingMessage } from "http";
 import { NodePlatformAdapter } from "./platform/PlatformAdapter";
 import { NodeFileSystemAdapter, IFileSystemAdapter } from "./platform/FileSystemAdapter";
-// tslint:disable-next-line:no-var-requires
 const https = require("follow-redirects").https;
-// tslint:disable-next-line:no-var-requires
 const decompress = require("decompress");
-// tslint:disable-next-line:no-var-requires
 const decompressTargz = require("decompress-targz");
 
 export default class TSQLLintRuntimeHelper {
