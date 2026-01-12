@@ -26,22 +26,18 @@ export class NodeBinaryExecutor implements IBinaryExecutor {
         console.log(`stderr: ${data.toString()}`);
       });
 
-      childProcess.on("close", (code: number) => {
-        if (code === 0) {
-          const lines = result.split("\n");
-          const resultsArr: string[] = [];
+      childProcess.on("close", () => {
+        const lines = result.split("\n");
+        const resultsArr: string[] = [];
 
-          lines.forEach(element => {
-            const index = element.indexOf("(");
-            if (index > 0) {
-              resultsArr.push(element.substring(index, element.length - 1));
-            }
-          });
+        lines.forEach(element => {
+          const index = element.indexOf("(");
+          if (index > 0) {
+            resultsArr.push(element.substring(index, element.length - 1));
+          }
+        });
 
-          resolve(resultsArr);
-        } else {
-          reject(new Error(`Process exited with code ${code}`));
-        }
+        resolve(resultsArr);
       });
 
       childProcess.on("error", reject);

@@ -1,6 +1,5 @@
 "use strict";
 
-import { spawn } from "child_process";
 import * as os from "os";
 import * as path from "path";
 import { TextDocument } from "vscode-languageserver-textdocument";
@@ -21,6 +20,7 @@ import { ITsqlLintError, parseErrors } from "./parseError";
 import { getCommands, registerFileErrors } from "./commands";
 import { NodeFileSystemAdapter } from "./platform/FileSystemAdapter";
 import { NodePlatformAdapter } from "./platform/PlatformAdapter";
+import { NodeBinaryExecutor } from "./platform/BinaryExecutor";
 
 const applicationRoot = path.parse(process.argv[1]);
 
@@ -103,42 +103,18 @@ async function getTextEdit(d: TextDocument, force: boolean = false): Promise<Tex
 const toolsHelper: TSQLLintRuntimeHelper = new TSQLLintRuntimeHelper(applicationRoot.dir);
 const fileSystemAdapter = new NodeFileSystemAdapter();
 const platformAdapter = new NodePlatformAdapter();
+const binaryExecutor = new NodeBinaryExecutor();
 
 async function LintBuffer(fileUri: string, shouldFix: boolean): Promise<string[]> {
   const toolsPath = await toolsHelper.TSQLLintRuntime();
 
-  const result: string[] = await new Promise((resolve, reject) => {
-    const args = [fileUri];
-    if (shouldFix) {
-      args.push("-x");
-    }
+  const args = [fileUri];
+  if (shouldFix) {
+    args.push("-x");
+  }
 
-    const binaryPath = platformAdapter.getBinaryPath(toolsPath);
-    const childProcess = spawn(binaryPath, args);
-
-    let result = "";
-    childProcess.stdout.on("data", (data: string) => {
-      result += data;
-    });
-
-    childProcess.stderr.on("data", (data: string) => {
-      console.log(`stderr: ${data}`);
-    });
-
-    childProcess.on("close", () => {
-      const list: string[] = result.split("\n");
-      const resultsArr: string[] = [];
-
-      list.forEach(element => {
-        const index = element.indexOf("(");
-        if (index > 0) {
-          resultsArr.push(element.substring(index, element.length - 1));
-        }
-      });
-
-      resolve(resultsArr);
-    });
-  });
+  const binaryPath = platformAdapter.getBinaryPath(toolsPath);
+  const result = await binaryExecutor.execute(binaryPath, args);
 
   return result;
 }
