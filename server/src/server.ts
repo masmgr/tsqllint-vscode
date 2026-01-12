@@ -132,7 +132,7 @@ async function LintBuffer(fileUri: string, shouldFix: boolean): Promise<string[]
       throw new Error(`Invalid Platform: ${os.type()}, ${process.arch}`);
     }
 
-    let result: string;
+    let result = "";
     childProcess.stdout.on("data", (data: string) => {
       result += data;
     });
