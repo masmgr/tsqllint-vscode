@@ -1,10 +1,15 @@
 import * as assert from "assert";
-import * as sinon from "sinon";
 import { EventEmitter } from "events";
+import * as sinon from "sinon";
 import { NodeBinaryExecutor } from "../platform/BinaryExecutor";
 
 suite("BinaryExecutor", () => {
   let sandbox: sinon.SinonSandbox;
+  type MockChildProcess = EventEmitter & {
+    stdout: EventEmitter;
+    stderr: EventEmitter;
+    kill: sinon.SinonStub;
+  };
 
   setup(() => {
     sandbox = sinon.createSandbox();
@@ -15,7 +20,7 @@ suite("BinaryExecutor", () => {
   });
 
   test("should execute binary and return parsed results", async () => {
-    const mockChildProcess = new EventEmitter() as any;
+    const mockChildProcess = new EventEmitter() as MockChildProcess;
     mockChildProcess.stdout = new EventEmitter();
     mockChildProcess.stderr = new EventEmitter();
     mockChildProcess.kill = sandbox.stub();
@@ -36,7 +41,7 @@ suite("BinaryExecutor", () => {
   });
 
   test("should use default timeout of 30 seconds", async () => {
-    const mockChildProcess = new EventEmitter() as any;
+    const mockChildProcess = new EventEmitter() as MockChildProcess;
     mockChildProcess.stdout = new EventEmitter();
     mockChildProcess.stderr = new EventEmitter();
     mockChildProcess.kill = sandbox.stub();
@@ -54,13 +59,14 @@ suite("BinaryExecutor", () => {
     try {
       await promise;
       assert.fail("Should have timed out");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      assert.ok(error instanceof Error);
       assert.strictEqual(error.message, "Binary execution timed out after 30000ms");
     }
   });
 
   test("should use custom timeout when provided", async () => {
-    const mockChildProcess = new EventEmitter() as any;
+    const mockChildProcess = new EventEmitter() as MockChildProcess;
     mockChildProcess.stdout = new EventEmitter();
     mockChildProcess.stderr = new EventEmitter();
     mockChildProcess.kill = sandbox.stub();
@@ -78,13 +84,14 @@ suite("BinaryExecutor", () => {
     try {
       await promise;
       assert.fail("Should have timed out");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      assert.ok(error instanceof Error);
       assert.strictEqual(error.message, "Binary execution timed out after 5000ms");
     }
   });
 
   test("should kill process on timeout", async () => {
-    const mockChildProcess = new EventEmitter() as any;
+    const mockChildProcess = new EventEmitter() as MockChildProcess;
     mockChildProcess.stdout = new EventEmitter();
     mockChildProcess.stderr = new EventEmitter();
     mockChildProcess.kill = sandbox.stub();
@@ -102,7 +109,8 @@ suite("BinaryExecutor", () => {
     try {
       await promise;
       assert.fail("Should have timed out");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      assert.ok(error instanceof Error);
       assert(mockChildProcess.kill.called, "kill() should have been called");
     }
   });
@@ -116,13 +124,14 @@ suite("BinaryExecutor", () => {
     try {
       await executor.execute("/path/to/binary", ["arg1"]);
       assert.fail("Should have thrown an error");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      assert.ok(error instanceof Error);
       assert.strictEqual(error.message, "Spawn failed");
     }
   });
 
   test("should reject on process error", async () => {
-    const mockChildProcess = new EventEmitter() as any;
+    const mockChildProcess = new EventEmitter() as MockChildProcess;
     mockChildProcess.stdout = new EventEmitter();
     mockChildProcess.stderr = new EventEmitter();
     mockChildProcess.kill = sandbox.stub();
@@ -141,13 +150,14 @@ suite("BinaryExecutor", () => {
     try {
       await promise;
       assert.fail("Should have thrown an error");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      assert.ok(error instanceof Error);
       assert.strictEqual(error.message, "Process error");
     }
   });
 
   test("should clear timeout on successful completion", async () => {
-    const mockChildProcess = new EventEmitter() as any;
+    const mockChildProcess = new EventEmitter() as MockChildProcess;
     mockChildProcess.stdout = new EventEmitter();
     mockChildProcess.stderr = new EventEmitter();
     mockChildProcess.kill = sandbox.stub();
@@ -171,7 +181,7 @@ suite("BinaryExecutor", () => {
   });
 
   test("should handle empty stdout", async () => {
-    const mockChildProcess = new EventEmitter() as any;
+    const mockChildProcess = new EventEmitter() as MockChildProcess;
     mockChildProcess.stdout = new EventEmitter();
     mockChildProcess.stderr = new EventEmitter();
     mockChildProcess.kill = sandbox.stub();
@@ -192,7 +202,7 @@ suite("BinaryExecutor", () => {
   });
 
   test("should handle process error after resolution", async () => {
-    const mockChildProcess = new EventEmitter() as any;
+    const mockChildProcess = new EventEmitter() as MockChildProcess;
     mockChildProcess.stdout = new EventEmitter();
     mockChildProcess.stderr = new EventEmitter();
     mockChildProcess.kill = sandbox.stub();
@@ -212,5 +222,4 @@ suite("BinaryExecutor", () => {
 
     assert.strictEqual(result.length, 0);
   });
-
 });

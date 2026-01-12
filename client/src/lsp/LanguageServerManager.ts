@@ -42,9 +42,8 @@ export class VSCodeLanguageServerManager implements ILanguageServerManager {
   }
 
   onReady(): Promise<void> {
-    const client = this.client as any;
-    if (typeof client.onReady === "function") {
-      return client.onReady();
+    if (typeof (this.client as unknown as Record<string, unknown>).onReady === "function") {
+      return (this.client as unknown as Record<string, () => Promise<void>>).onReady();
     }
     return this.client.start();
   }

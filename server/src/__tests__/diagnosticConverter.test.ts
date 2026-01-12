@@ -1,7 +1,7 @@
 import * as assert from "assert";
+import { DiagnosticSeverity } from "vscode-languageserver/node";
 import { DiagnosticConverter } from "../validation/DiagnosticConverter";
 import { ITsqlLintError } from "../parseError";
-import { DiagnosticSeverity } from "vscode-languageserver/node";
 
 suite("DiagnosticConverter - toDiagnostics()", () => {
   let converter: DiagnosticConverter;

@@ -1,7 +1,7 @@
 import * as assert from "assert";
-import * as sinon from "sinon";
 import * as os from "os";
 import * as path from "path";
+import * as sinon from "sinon";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { DiagnosticSeverity } from "vscode-languageserver/node";
 
@@ -158,7 +158,8 @@ suite("server.ts - Core Functions", () => {
       try {
         await mockBinaryExecutor.execute(binaryPath, ["/tmp/test.sql"], 30000);
         assert.fail("Should have thrown error");
-      } catch (err: any) {
+      } catch (err: unknown) {
+        assert.ok(err instanceof Error);
         assert.strictEqual(err.message, "Binary not found");
       }
     });
@@ -277,7 +278,8 @@ suite("server.ts - Core Functions", () => {
       try {
         await mockBinaryExecutor.execute("/path/to/binary", ["/tmp/test.sql"], 30000);
         assert.fail("Should have thrown error");
-      } catch (err: any) {
+      } catch (err: unknown) {
+        assert.ok(err instanceof Error);
         assert.strictEqual(err.message, "Binary execution failed");
       }
     });
@@ -310,7 +312,9 @@ suite("server.ts - Core Functions", () => {
       const force = false;
 
       const shouldApplyFix = force || autoFixOnSave;
-      const edits = shouldApplyFix ? [{ range: { start: { line: 0, character: 0 }, end: { line: 10000, character: 0 } }, newText: "fixed" }] : [];
+      const edits = shouldApplyFix
+        ? [{ range: { start: { line: 0, character: 0 }, end: { line: 10000, character: 0 } }, newText: "fixed" }]
+        : [];
 
       assert.deepStrictEqual(edits, []);
     });
@@ -428,7 +432,12 @@ suite("server.ts - Core Functions", () => {
         onInitialize: sandbox.stub(),
       };
 
-      mockConnection.onInitialize((handler: any) => {
+      mockConnection.onInitialize(function (
+        this: void,
+        handler: (params: Record<string, unknown>) => {
+          capabilities: { textDocumentSync?: unknown; codeActionProvider?: boolean };
+        }
+      ) {
         const result = handler({});
         assert.ok(result.capabilities);
         assert.ok(result.capabilities.textDocumentSync);
@@ -445,8 +454,11 @@ suite("server.ts - Core Functions", () => {
 
       const globalSettings = { autoFixOnSave: false };
 
-      mockConnection.onDidChangeConfiguration((handler: any) => {
-        const change = {
+      mockConnection.onDidChangeConfiguration(function (
+        this: void,
+        handler: (change: { settings: { tsqlLint?: { autoFixOnSave: boolean } } }) => void
+      ) {
+        const change: { settings: { tsqlLint?: { autoFixOnSave: boolean } } } = {
           settings: {
             tsqlLint: { autoFixOnSave: true },
           },
@@ -464,7 +476,7 @@ suite("server.ts - Core Functions", () => {
         onCodeAction: sandbox.stub(),
       };
 
-      mockConnection.onCodeAction((handler: any) => {
+      mockConnection.onCodeAction(function (this: void, handler: (params: unknown) => unknown) {
         assert.ok(typeof handler === "function");
       });
 
@@ -476,7 +488,7 @@ suite("server.ts - Core Functions", () => {
         onNotification: sandbox.stub(),
       };
 
-      mockConnection.onNotification("fix", (handler: any) => {
+      mockConnection.onNotification("fix", function (this: void, handler: (params: unknown) => void) {
         assert.ok(typeof handler === "function");
       });
 
@@ -488,7 +500,7 @@ suite("server.ts - Core Functions", () => {
         onDidChangeContent: sandbox.stub(),
       };
 
-      mockDocumentManager.onDidChangeContent((handler: any) => {
+      mockDocumentManager.onDidChangeContent(function (this: void, handler: (doc: unknown) => void) {
         assert.ok(typeof handler === "function");
       });
 
@@ -500,7 +512,7 @@ suite("server.ts - Core Functions", () => {
         onWillSaveWaitUntil: sandbox.stub(),
       };
 
-      mockDocumentManager.onWillSaveWaitUntil((handler: any) => {
+      mockDocumentManager.onWillSaveWaitUntil(function (this: void, handler: (doc: unknown) => void) {
         assert.ok(typeof handler === "function");
       });
 
@@ -535,10 +547,8 @@ suite("server.ts - Core Functions", () => {
       const defaultSettings = { autoFixOnSave: false };
       let globalSettings = defaultSettings;
 
-      const change = {
-        settings: {
-          // tsqlLint is missing
-        } as any,
+      const change: { settings: { tsqlLint?: { autoFixOnSave: boolean } } } = {
+        settings: {},
       };
 
       if (!change.settings.tsqlLint) {

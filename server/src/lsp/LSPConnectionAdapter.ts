@@ -14,9 +14,9 @@ export interface ILSPConnection {
   sendDiagnostics(params: { uri: string; diagnostics: Diagnostic[] }): void;
   applyWorkspaceEdit(uri: string, version: number, edits: TextEdit[]): Promise<void>;
   onInitialize(handler: (params: InitializeParams) => InitializeResult): void;
-  onDidChangeConfiguration(handler: (change: any) => void): void;
+  onDidChangeConfiguration(handler: (change: unknown) => void): void;
   onCodeAction(handler: (params: CodeActionParams) => Command[]): void;
-  onNotification(method: string, handler: (...params: any[]) => void): void;
+  onNotification(method: string, handler: (params: unknown) => void): void;
 }
 
 export class VSCodeLSPConnection implements ILSPConnection {
@@ -39,7 +39,7 @@ export class VSCodeLSPConnection implements ILSPConnection {
     this.connection.onInitialize(handler);
   }
 
-  onDidChangeConfiguration(handler: (change: any) => void): void {
+  onDidChangeConfiguration(handler: (change: unknown) => void): void {
     this.connection.onDidChangeConfiguration(handler);
   }
 
@@ -47,7 +47,7 @@ export class VSCodeLSPConnection implements ILSPConnection {
     this.connection.onCodeAction(handler);
   }
 
-  onNotification(method: string, handler: (...params: any[]) => void): void {
+  onNotification(method: string, handler: (params: unknown) => void): void {
     this.connection.onNotification(method, handler);
   }
 

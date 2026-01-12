@@ -1,18 +1,31 @@
 import * as assert from "assert";
 import { EventEmitter } from "events";
+import * as fs from "fs";
+import { IncomingMessage } from "http";
 import * as os from "os";
 import * as sinon from "sinon";
 import TSQLLintRuntimeHelper from "../TSQLLintToolsHelper";
+import { IFileSystemAdapter } from "../platform/FileSystemAdapter";
 
 // ===== Test Suites =====
+interface HelperWithFileSystem {
+  fileSystemAdapter: IFileSystemAdapter;
+}
+type MockWriteStream = EventEmitter & { close: sinon.SinonStub };
+type MockResponse = IncomingMessage & {
+  statusCode?: number;
+  headers: IncomingMessage["headers"];
+  pipe: sinon.SinonStub;
+};
+const helperClass = TSQLLintRuntimeHelper as unknown as { _tsqllintToolsPath?: string };
 
 suite("TSQLLintToolsHelper - Constructor & Platform Detection", () => {
   setup(() => {
-    (TSQLLintRuntimeHelper as any)._tsqllintToolsPath = undefined;
+    helperClass._tsqllintToolsPath = undefined;
   });
 
   teardown(() => {
-    (TSQLLintRuntimeHelper as any)._tsqllintToolsPath = undefined;
+    helperClass._tsqllintToolsPath = undefined;
     sinon.restore();
   });
 
@@ -78,7 +91,8 @@ suite("TSQLLintToolsHelper - Constructor & Platform Detection", () => {
       try {
         await helper.TSQLLintRuntime();
         assert.fail("Should have thrown an error for unsupported platform");
-      } catch (error: any) {
+      } catch (error: unknown) {
+        assert.ok(error instanceof Error);
         assert.match(error.message, /Unsupported platform/);
       }
     } finally {
@@ -89,16 +103,16 @@ suite("TSQLLintToolsHelper - Constructor & Platform Detection", () => {
 
 suite("TSQLLintToolsHelper - TSQLLintRuntime() Caching", () => {
   setup(() => {
-    (TSQLLintRuntimeHelper as any)._tsqllintToolsPath = undefined;
+    helperClass._tsqllintToolsPath = undefined;
   });
 
   teardown(() => {
-    (TSQLLintRuntimeHelper as any)._tsqllintToolsPath = undefined;
+    helperClass._tsqllintToolsPath = undefined;
     sinon.restore();
   });
 
   test("should return cached path if already set", async () => {
-    (TSQLLintRuntimeHelper as any)._tsqllintToolsPath = "/cached/path";
+    helperClass._tsqllintToolsPath = "/cached/path";
 
     const helper = new TSQLLintRuntimeHelper("/test");
     const result = await helper.TSQLLintRuntime();
@@ -110,15 +124,16 @@ suite("TSQLLintToolsHelper - TSQLLintRuntime() Caching", () => {
     const helper = new TSQLLintRuntimeHelper("/test");
     const existsStub = sinon.stub().resolves(true);
 
-    sinon.stub(helper as any, "fileSystemAdapter").value({
+    const mockFileSystemAdapter: IFileSystemAdapter = {
       exists: existsStub,
       createDirectory: sinon.stub().resolves(undefined),
-      createWriteStream: sinon.stub(),
+      createWriteStream: sinon.stub().returns(new EventEmitter() as unknown as fs.WriteStream),
       deleteFile: sinon.stub().resolves(undefined),
       writeFile: sinon.stub().resolves(undefined),
       readFile: sinon.stub().resolves(""),
-      createReadStream: sinon.stub(),
-    });
+      createReadStream: sinon.stub().returns(new EventEmitter() as unknown as fs.ReadStream),
+    };
+    sinon.stub(helper as unknown as HelperWithFileSystem, "fileSystemAdapter").value(mockFileSystemAdapter);
 
     const result = await helper.TSQLLintRuntime();
 
@@ -134,20 +149,20 @@ suite("TSQLLintToolsHelper - DownloadRuntime() Error Handling", () => {
 
   test("should handle network errors gracefully", done => {
     // Create a mock request that emits an error
-    const mockRequest = new EventEmitter() as any;
+    const mockRequest = new EventEmitter();
 
     const httpsStub = sinon.stub(require("follow-redirects").https, "get");
     httpsStub.callsFake((_url: string, _callback: Function) => mockRequest);
 
     const helper = new TSQLLintRuntimeHelper("/test");
-    const deleteFileStub = sinon.stub(helper as any, "fileSystemAdapter").value({
+    sinon.stub(helper as unknown as HelperWithFileSystem, "fileSystemAdapter").value({
       exists: sinon.stub().resolves(false),
       createDirectory: sinon.stub().resolves(undefined),
-      createWriteStream: sinon.stub().returns(new EventEmitter() as any),
+      createWriteStream: sinon.stub().returns(new EventEmitter() as unknown as fs.WriteStream),
       deleteFile: sinon.stub().resolves(undefined),
       writeFile: sinon.stub().resolves(undefined),
       readFile: sinon.stub().resolves(""),
-      createReadStream: sinon.stub(),
+      createReadStream: sinon.stub().returns(new EventEmitter() as unknown as fs.ReadStream),
     });
 
     const promise = helper.DownloadRuntime("/test/install");
@@ -166,8 +181,8 @@ suite("TSQLLintToolsHelper - DownloadRuntime() Error Handling", () => {
   });
 
   test("should handle 404 errors", done => {
-    const mockRequest = new EventEmitter() as any;
-    const mockResponse = new EventEmitter() as any;
+    const mockRequest = new EventEmitter();
+    const mockResponse = new EventEmitter() as MockResponse;
     mockResponse.statusCode = 404;
     mockResponse.headers = {};
     mockResponse.pipe = sinon.stub().returns(mockResponse);
@@ -179,14 +194,14 @@ suite("TSQLLintToolsHelper - DownloadRuntime() Error Handling", () => {
     });
 
     const helper = new TSQLLintRuntimeHelper("/test");
-    sinon.stub(helper as any, "fileSystemAdapter").value({
+    sinon.stub(helper as unknown as HelperWithFileSystem, "fileSystemAdapter").value({
       exists: sinon.stub().resolves(false),
       createDirectory: sinon.stub().resolves(undefined),
-      createWriteStream: sinon.stub().returns(new EventEmitter() as any),
+      createWriteStream: sinon.stub().returns(new EventEmitter() as unknown as fs.WriteStream),
       deleteFile: sinon.stub().resolves(undefined),
       writeFile: sinon.stub().resolves(undefined),
       readFile: sinon.stub().resolves(""),
-      createReadStream: sinon.stub(),
+      createReadStream: sinon.stub().returns(new EventEmitter() as unknown as fs.ReadStream),
     });
 
     const promise = helper.DownloadRuntime("/test/install");
@@ -204,8 +219,8 @@ suite("TSQLLintToolsHelper - DownloadRuntime() Error Handling", () => {
   });
 
   test("should handle 500 server errors", done => {
-    const mockRequest = new EventEmitter() as any;
-    const mockResponse = new EventEmitter() as any;
+    const mockRequest = new EventEmitter();
+    const mockResponse = new EventEmitter() as MockResponse;
     mockResponse.statusCode = 500;
     mockResponse.headers = {};
     mockResponse.pipe = sinon.stub().returns(mockResponse);
@@ -217,14 +232,14 @@ suite("TSQLLintToolsHelper - DownloadRuntime() Error Handling", () => {
     });
 
     const helper = new TSQLLintRuntimeHelper("/test");
-    sinon.stub(helper as any, "fileSystemAdapter").value({
+    sinon.stub(helper as unknown as HelperWithFileSystem, "fileSystemAdapter").value({
       exists: sinon.stub().resolves(false),
       createDirectory: sinon.stub().resolves(undefined),
-      createWriteStream: sinon.stub().returns(new EventEmitter() as any),
+      createWriteStream: sinon.stub().returns(new EventEmitter() as unknown as fs.WriteStream),
       deleteFile: sinon.stub().resolves(undefined),
       writeFile: sinon.stub().resolves(undefined),
       readFile: sinon.stub().resolves(""),
-      createReadStream: sinon.stub(),
+      createReadStream: sinon.stub().returns(new EventEmitter() as unknown as fs.ReadStream),
     });
 
     const promise = helper.DownloadRuntime("/test/install");
@@ -242,8 +257,8 @@ suite("TSQLLintToolsHelper - DownloadRuntime() Error Handling", () => {
   });
 
   test("should cleanup partial download on error", done => {
-    const mockRequest = new EventEmitter() as any;
-    const mockResponse = new EventEmitter() as any;
+    const mockRequest = new EventEmitter();
+    const mockResponse = new EventEmitter() as MockResponse;
     mockResponse.statusCode = 503;
     mockResponse.headers = {};
     mockResponse.pipe = sinon.stub().returns(mockResponse);
@@ -256,14 +271,14 @@ suite("TSQLLintToolsHelper - DownloadRuntime() Error Handling", () => {
 
     const helper = new TSQLLintRuntimeHelper("/test");
     const deleteFileStub = sinon.stub().resolves(undefined);
-    sinon.stub(helper as any, "fileSystemAdapter").value({
+    sinon.stub(helper as unknown as HelperWithFileSystem, "fileSystemAdapter").value({
       exists: sinon.stub().resolves(false),
       createDirectory: sinon.stub().resolves(undefined),
-      createWriteStream: sinon.stub().returns(new EventEmitter() as any),
+      createWriteStream: sinon.stub().returns(new EventEmitter() as unknown as fs.WriteStream),
       deleteFile: deleteFileStub,
       writeFile: sinon.stub().resolves(undefined),
       readFile: sinon.stub().resolves(""),
-      createReadStream: sinon.stub(),
+      createReadStream: sinon.stub().returns(new EventEmitter() as unknown as fs.ReadStream),
     });
 
     const promise = helper.DownloadRuntime("/test/install");
@@ -285,11 +300,11 @@ suite("TSQLLintToolsHelper - DownloadRuntime() Error Handling", () => {
 
 suite("TSQLLintToolsHelper - UnzipRuntime()", () => {
   setup(() => {
-    (TSQLLintRuntimeHelper as any)._tsqllintToolsPath = undefined;
+    helperClass._tsqllintToolsPath = undefined;
   });
 
   teardown(() => {
-    (TSQLLintRuntimeHelper as any)._tsqllintToolsPath = undefined;
+    helperClass._tsqllintToolsPath = undefined;
     sinon.restore();
   });
 
@@ -297,7 +312,10 @@ suite("TSQLLintToolsHelper - UnzipRuntime()", () => {
     // This test verifies that the UnzipRuntime method exists and can be called
     // The actual decompression is tested via integration, not unit tests
     const helper = new TSQLLintRuntimeHelper("/test");
-    assert.ok(typeof (helper as any).UnzipRuntime === "function");
+    const helperWithUnzip = helper as unknown as {
+      UnzipRuntime?: (path: string, dir: string) => Promise<string>;
+    };
+    assert.ok(typeof helperWithUnzip.UnzipRuntime === "function");
   });
 });
 
@@ -307,8 +325,8 @@ suite("TSQLLintToolsHelper - Download Directory Creation", () => {
   });
 
   test("should create installation directory if it doesn't exist", done => {
-    const mockRequest = new EventEmitter() as any;
-    const mockResponse = new EventEmitter() as any;
+    const mockRequest = new EventEmitter();
+    const mockResponse = new EventEmitter() as MockResponse;
     mockResponse.statusCode = 200;
     mockResponse.headers = {};
     mockResponse.pipe = sinon.stub().returns(mockResponse);
@@ -321,17 +339,17 @@ suite("TSQLLintToolsHelper - Download Directory Creation", () => {
 
     const helper = new TSQLLintRuntimeHelper("/test");
     const createDirStub = sinon.stub().resolves(undefined);
-    const mockStream = new EventEmitter() as any;
+    const mockStream = new EventEmitter() as MockWriteStream;
     mockStream.close = sinon.stub();
 
-    sinon.stub(helper as any, "fileSystemAdapter").value({
+    sinon.stub(helper as unknown as HelperWithFileSystem, "fileSystemAdapter").value({
       exists: sinon.stub().resolves(false),
       createDirectory: createDirStub,
-      createWriteStream: sinon.stub().returns(mockStream),
+      createWriteStream: sinon.stub().returns(mockStream as unknown as fs.WriteStream),
       deleteFile: sinon.stub().resolves(undefined),
       writeFile: sinon.stub().resolves(undefined),
       readFile: sinon.stub().resolves(""),
-      createReadStream: sinon.stub(),
+      createReadStream: sinon.stub().returns(new EventEmitter() as unknown as fs.ReadStream),
     });
 
     const promise = helper.DownloadRuntime("/test/install");
@@ -358,8 +376,8 @@ suite("TSQLLintToolsHelper - Download URL Verification", () => {
   test("should download from correct GitHub URL", done => {
     let downloadedUrl = "";
 
-    const mockRequest = new EventEmitter() as any;
-    const mockResponse = new EventEmitter() as any;
+    const mockRequest = new EventEmitter();
+    const mockResponse = new EventEmitter() as MockResponse;
     mockResponse.statusCode = 200;
     mockResponse.headers = {};
     mockResponse.pipe = sinon.stub().returns(mockResponse);
@@ -372,17 +390,17 @@ suite("TSQLLintToolsHelper - Download URL Verification", () => {
     });
 
     const helper = new TSQLLintRuntimeHelper("/test");
-    const mockStream = new EventEmitter() as any;
+    const mockStream = new EventEmitter() as MockWriteStream;
     mockStream.close = sinon.stub();
 
-    sinon.stub(helper as any, "fileSystemAdapter").value({
+    sinon.stub(helper as unknown as HelperWithFileSystem, "fileSystemAdapter").value({
       exists: sinon.stub().resolves(false),
       createDirectory: sinon.stub().resolves(undefined),
-      createWriteStream: sinon.stub().returns(mockStream),
+      createWriteStream: sinon.stub().returns(mockStream as unknown as fs.WriteStream),
       deleteFile: sinon.stub().resolves(undefined),
       writeFile: sinon.stub().resolves(undefined),
       readFile: sinon.stub().resolves(""),
-      createReadStream: sinon.stub(),
+      createReadStream: sinon.stub().returns(new EventEmitter() as unknown as fs.ReadStream),
     });
 
     sinon.stub(process.stdout, "write");

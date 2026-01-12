@@ -1,8 +1,8 @@
-import { window } from "vscode";
+import { window, TextEditorEdit } from "vscode";
 
 export interface ITextEditor {
   document: { uri: { toString(): string }; version: number };
-  edit(callback: (mutator: any) => void): Thenable<boolean>;
+  edit(callback: (mutator: TextEditorEdit) => void): Thenable<boolean>;
 }
 
 export interface IEditorService {
@@ -13,7 +13,7 @@ export interface IEditorService {
 
 export class VSCodeEditorService implements IEditorService {
   getActiveEditor(): ITextEditor | undefined {
-    return window.activeTextEditor as any;
+    return window.activeTextEditor as ITextEditor | undefined;
   }
 
   showInformationMessage(message: string): void {

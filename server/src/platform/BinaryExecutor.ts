@@ -58,7 +58,7 @@ export class NodeBinaryExecutor implements IBinaryExecutor {
         }
       });
 
-      childProcess.on("error", (error) => {
+      childProcess.on("error", error => {
         if (!isResolved) {
           isResolved = true;
           clearTimeout(timeoutHandle);

@@ -5,14 +5,26 @@ import {
   DiagnosticSeverity,
   TextEdit,
   InitializeParams,
+  InitializeResult,
   CodeActionParams,
   Command,
+  Connection,
 } from "vscode-languageserver";
 import { VSCodeLSPConnection } from "../lsp/LSPConnectionAdapter";
 
 suite("LSPConnectionAdapter - VSCodeLSPConnection", () => {
   let sandbox: sinon.SinonSandbox;
-  let mockConnection: any;
+  interface MockConnection {
+    sendDiagnostics: sinon.SinonStub;
+    onInitialize: sinon.SinonStub;
+    onDidChangeConfiguration: sinon.SinonStub;
+    onCodeAction: sinon.SinonStub;
+    onNotification: sinon.SinonStub;
+    workspace: {
+      applyEdit: sinon.SinonStub;
+    };
+  }
+  let mockConnection: MockConnection;
   let adapter: VSCodeLSPConnection;
 
   setup(() => {
@@ -29,7 +41,7 @@ suite("LSPConnectionAdapter - VSCodeLSPConnection", () => {
       },
     };
 
-    adapter = new VSCodeLSPConnection(mockConnection);
+    adapter = new VSCodeLSPConnection(mockConnection as unknown as Connection);
   });
 
   teardown(() => {
@@ -40,14 +52,12 @@ suite("LSPConnectionAdapter - VSCodeLSPConnection", () => {
 
   suite("onInitialize()", () => {
     test("should register initialize handler with connection", () => {
-      const handler = (params: InitializeParams) => {
-        return {
-          capabilities: {
-            textDocumentSync: { openClose: true, change: 1, willSave: true, willSaveWaitUntil: true, save: true },
-            codeActionProvider: true,
-          },
-        } as any;
-      };
+      const handler = (_params: InitializeParams): InitializeResult => ({
+        capabilities: {
+          textDocumentSync: { openClose: true, change: 1, willSave: true, willSaveWaitUntil: true, save: true },
+          codeActionProvider: true,
+        },
+      });
 
       adapter.onInitialize(handler);
 
@@ -338,7 +348,8 @@ suite("LSPConnectionAdapter - VSCodeLSPConnection", () => {
       try {
         await adapter.applyWorkspaceEdit("file:///test.sql", 1, []);
         assert.fail("Should have thrown error");
-      } catch (err: any) {
+      } catch (err: unknown) {
+        assert.ok(err instanceof Error);
         assert.strictEqual(err.message, "Edit failed");
       }
     });
@@ -428,7 +439,7 @@ suite("LSPConnectionAdapter - VSCodeLSPConnection", () => {
       const connection = adapter.getConnection();
 
       assert.ok(connection.workspace);
-      assert.ok(connection.workspace.applyEdit);
+      assert.ok(Object.prototype.hasOwnProperty.call(connection.workspace, "applyEdit"));
     });
   });
 
@@ -473,10 +484,18 @@ suite("LSPConnectionAdapter - VSCodeLSPConnection", () => {
     });
 
     test("should handle configuration change and update behavior", () => {
-      let settings = { autoFixOnSave: false };
+      let settings: { autoFixOnSave: boolean } = { autoFixOnSave: false };
 
-      const handler = (change: any) => {
-        settings = change.settings.tsqlLint || settings;
+      interface SettingsChange {
+        settings: { tsqlLint?: { autoFixOnSave?: boolean } };
+      }
+      const handler = (change: SettingsChange) => {
+        if (!change.settings.tsqlLint) {
+          return;
+        }
+        settings = {
+          autoFixOnSave: change.settings.tsqlLint.autoFixOnSave ?? settings.autoFixOnSave,
+        };
       };
 
       adapter.onDidChangeConfiguration(handler);

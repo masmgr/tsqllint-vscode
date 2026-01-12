@@ -9,6 +9,7 @@ import {
   TextDocuments,
   TextDocumentSyncKind,
   TextEdit,
+  InitializeResult,
 } from "vscode-languageserver/node";
 import * as uid from "uid-safe";
 import TSQLLintRuntimeHelper from "./TSQLLintToolsHelper";
@@ -36,23 +37,26 @@ const defaultSettings: TsqlLintSettings = { autoFixOnSave: false };
 let globalSettings: TsqlLintSettings = defaultSettings;
 
 lspConnection.onDidChangeConfiguration(change => {
-  globalSettings = (change.settings.tsqlLint || defaultSettings) as TsqlLintSettings;
+  const config = change as Record<string, Record<string, TsqlLintSettings>>;
+  globalSettings = config.settings?.tsqlLint || defaultSettings;
 });
 
 documents.listen(connection);
 
-lspConnection.onInitialize((): any => ({
-  capabilities: {
-    textDocumentSync: {
-      openClose: true,
-      save: true,
-      willSaveWaitUntil: true,
-      willSave: true,
-      change: TextDocumentSyncKind.Incremental,
+lspConnection.onInitialize(
+  (): InitializeResult => ({
+    capabilities: {
+      textDocumentSync: {
+        openClose: true,
+        save: true,
+        willSaveWaitUntil: true,
+        willSave: true,
+        change: TextDocumentSyncKind.Incremental,
+      },
+      codeActionProvider: true,
     },
-    codeActionProvider: true,
-  },
-}));
+  })
+);
 
 lspConnection.onCodeAction(getCommands);
 

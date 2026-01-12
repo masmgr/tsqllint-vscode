@@ -6,7 +6,19 @@ import { VSCodeDocumentManager } from "../lsp/DocumentManager";
 
 suite("DocumentManager - VSCodeDocumentManager", () => {
   let sandbox: sinon.SinonSandbox;
-  let mockDocuments: any;
+  interface ChangeEvent {
+    document: TextDocument;
+    contentChanges?: unknown[];
+  }
+  interface WillSaveEvent {
+    document: TextDocument;
+  }
+  interface MockDocuments {
+    get: sinon.SinonStub<[string], TextDocument | undefined>;
+    onDidChangeContent: sinon.SinonStub<[(event: ChangeEvent) => void], void>;
+    onWillSaveWaitUntil: sinon.SinonStub<[(event: WillSaveEvent) => void], void>;
+  }
+  let mockDocuments: MockDocuments;
   let documentManager: VSCodeDocumentManager;
 
   setup(() => {
@@ -18,7 +30,7 @@ suite("DocumentManager - VSCodeDocumentManager", () => {
       onWillSaveWaitUntil: sandbox.stub(),
     };
 
-    documentManager = new VSCodeDocumentManager(mockDocuments);
+    documentManager = new VSCodeDocumentManager(mockDocuments as unknown as TextDocuments<TextDocument>);
   });
 
   teardown(() => {
@@ -265,10 +277,10 @@ suite("DocumentManager - VSCodeDocumentManager", () => {
       const registeredHandler = mockDocuments.onWillSaveWaitUntil.firstCall.args[0];
       const doc = TextDocument.create("file:///test.sql", "sql", 1, "SELECT * FROM users");
 
-      const promise = registeredHandler({ document: doc });
+      const promise = registeredHandler({ document: doc }) as unknown as PromiseLike<unknown>;
 
-      // Verify it returns a promise
-      assert.ok(promise instanceof Promise);
+      // Verify it returns a thenable
+      assert.strictEqual(typeof promise.then, "function");
     });
 
     test("should handle multiple will save handlers", () => {
@@ -322,12 +334,7 @@ suite("DocumentManager - VSCodeDocumentManager", () => {
       documentManager.onWillSaveWaitUntil(handler);
 
       const registeredHandler = mockDocuments.onWillSaveWaitUntil.firstCall.args[0];
-      const doc = TextDocument.create(
-        "file:///test.sql",
-        "sql",
-        1,
-        "SELECT * FROM users\nWHERE id = 1"
-      );
+      const doc = TextDocument.create("file:///test.sql", "sql", 1, "SELECT * FROM users\nWHERE id = 1");
 
       registeredHandler({ document: doc });
 
@@ -418,11 +425,7 @@ suite("DocumentManager - VSCodeDocumentManager", () => {
       const doc1 = TextDocument.create("file:///test1.sql", "sql", 1, "SELECT * FROM users");
       const doc2 = TextDocument.create("file:///test2.sql", "sql", 1, "SELECT * FROM orders");
 
-      mockDocuments.get
-        .withArgs("file:///test1.sql")
-        .returns(doc1)
-        .withArgs("file:///test2.sql")
-        .returns(doc2);
+      mockDocuments.get.withArgs("file:///test1.sql").returns(doc1).withArgs("file:///test2.sql").returns(doc2);
 
       const result1 = documentManager.getDocument("file:///test1.sql");
       const result2 = documentManager.getDocument("file:///test2.sql");
@@ -456,9 +459,9 @@ suite("DocumentManager - VSCodeDocumentManager", () => {
       const registeredHandler = mockDocuments.onWillSaveWaitUntil.firstCall.args[0];
       const doc = TextDocument.create("file:///test.sql", "sql", 1, "SELECT * FROM users");
 
-      const promise = registeredHandler({ document: doc });
+      const promise = registeredHandler({ document: doc }) as unknown as PromiseLike<unknown>;
 
-      assert.ok(promise instanceof Promise);
+      assert.strictEqual(typeof promise.then, "function");
     });
 
     test("should handle null document gracefully", () => {

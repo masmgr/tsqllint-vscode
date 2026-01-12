@@ -81,7 +81,8 @@ suite("Language Server Initialization Tests", () => {
 
     // Activate extension if needed
     const extension = vscode.extensions.getExtension("tsqllint.tsqllint");
-    if (!extension.isActive) {
+    assert.ok(extension, "Extension should be present");
+    if (extension && !extension.isActive) {
       await extension.activate();
     }
 
@@ -90,9 +91,10 @@ suite("Language Server Initialization Tests", () => {
       await vscode.commands.executeCommand("tsqlLint.fix");
       // Command executed successfully (or with expected errors)
       assert.ok(true, "Command executed without critical errors");
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Check if error is related to command not found or parameter issues
-      assert.ok(!error.message.includes("not found"), "tsqlLint.fix command should be registered and executable");
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      assert.ok(!errorMessage.includes("not found"), "tsqlLint.fix command should be registered and executable");
     }
   });
 });
@@ -145,7 +147,8 @@ suite("Configuration Tests", () => {
 
     // Activate extension if needed
     const extension = vscode.extensions.getExtension("tsqllint.tsqllint");
-    if (!extension.isActive) {
+    assert.ok(extension, "Extension should be present");
+    if (extension && !extension.isActive) {
       await extension.activate();
     }
 
@@ -153,7 +156,7 @@ suite("Configuration Tests", () => {
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Verify extension is still active
-    assert.strictEqual(extension.isActive, true, "Extension should remain active after opening empty file");
+    assert.strictEqual(extension?.isActive, true, "Extension should remain active after opening empty file");
   });
 
   test("Document changes should trigger extension processing", async function () {
@@ -168,7 +171,8 @@ suite("Configuration Tests", () => {
 
     // Activate extension if needed
     const extension = vscode.extensions.getExtension("tsqllint.tsqllint");
-    if (!extension.isActive) {
+    assert.ok(extension, "Extension should be present");
+    if (extension && !extension.isActive) {
       await extension.activate();
     }
 
@@ -185,6 +189,6 @@ suite("Configuration Tests", () => {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Verify extension is still active after changes
-    assert.strictEqual(extension.isActive, true, "Extension should remain active after document changes");
+    assert.strictEqual(extension?.isActive, true, "Extension should remain active after document changes");
   });
 });
