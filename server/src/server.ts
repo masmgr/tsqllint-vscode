@@ -107,7 +107,7 @@ async function LintBuffer(fileUri: string, shouldFix: boolean): Promise<string[]
   }
 
   const binaryPath = platformAdapter.getBinaryPath(toolsPath);
-  const result = await binaryExecutor.execute(binaryPath, args);
+  const result = await binaryExecutor.execute(binaryPath, args, 30000); // 30 second timeout
 
   return result;
 }
