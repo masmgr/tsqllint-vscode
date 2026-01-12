@@ -16,7 +16,7 @@ const commandStore: { [fileUri: string]: IDiagnosticCommands[] } = {};
 
 export function registerFileErrors(file: TextDocument, errors: ITsqlLintError[]) {
   const lines = file.getText().split("\n");
-  commandStore[file.uri] = errors.map(toDiagnosticCommands);
+  commandStore[file.uri] = errors.map(toDiagnosticCommands).filter(cmd => cmd !== null);
   function toDiagnosticCommands(error: ITsqlLintError): IDiagnosticCommands {
     const { start, end } = error.range;
 
